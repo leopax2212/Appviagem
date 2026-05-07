@@ -1,63 +1,77 @@
 package com.example.appviagem.navigation
 
 import android.content.Context
-import com.example.appviagem.ui.screens.LoginScreen
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import com.example.appviagem.data.local.AppDatabase
 import com.example.appviagem.data.repository.UsuarioRepository
-import com.example.appviagem.ui.screens.ForgotPasswordScreen
-import com.example.appviagem.ui.screens.MenuScreen
-import com.example.appviagem.ui.screens.RegisterScreen
+import com.example.appviagem.data.repository.ViagemRepository
+import com.example.appviagem.ui.screens.*
 import com.example.appviagem.viewmodel.AuthViewModel
+import com.example.appviagem.viewmodel.ViagemViewModel
 
 @Composable
 fun NavGraph(context: Context) {
-
     val navController = rememberNavController()
 
-    // 🔹 Banco
+    // Banco
     val db = AppDatabase.getDatabase(context)
-    val dao = db.usuarioDao()
 
-    // 🔹 Repository
-    val repository = UsuarioRepository(dao)
+    // Repositories
+    val usuarioRepository = UsuarioRepository(db.usuarioDao())
+    val viagemRepository = ViagemRepository(db.viagemDao())
 
-    // 🔹 ViewModel com factory
-    val vm: AuthViewModel = viewModel(
+    // ViewModels
+    val authViewModel: AuthViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return AuthViewModel(repository) as T
+                @Suppress("UNCHECKED_CAST")
+                return AuthViewModel(usuarioRepository) as T
             }
         }
     )
 
-    // 🔹 Navegação
+    val viagemViewModel: ViagemViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return ViagemViewModel(viagemRepository) as T
+            }
+        }
+    )
+
+    // Navegação
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            LoginScreen(navController, vm)
+            LoginScreen(navController, authViewModel)
         }
 
         composable("register") {
-            RegisterScreen(navController, vm)
+            RegisterScreen(navController, authViewModel)
         }
 
         composable("forgot") {
-            ForgotPasswordScreen(navController, vm)
+            ForgotPasswordScreen(navController, authViewModel)
         }
 
-        composable(
-            route = "menu/{email}",
-            arguments = listOf(navArgument("email") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
-            MenuScreen(email)
+        composable("menu") {
+            MenuScreen(navController, authViewModel)
+        }
+
+        composable("nova_viagem") {
+            NovaViagemScreen(navController, authViewModel, viagemViewModel)
+        }
+
+        composable("minhas_viagens") {
+            MinhasViagensScreen(navController, authViewModel, viagemViewModel)
+        }
+
+        composable("sobre") {
+            SobreScreen(navController)
         }
     }
 }

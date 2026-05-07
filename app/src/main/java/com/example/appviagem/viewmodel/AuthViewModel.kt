@@ -18,12 +18,30 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
     var errorMessage by mutableStateOf("")
     var successMessage by mutableStateOf("")
 
+    // Usuário logado
+    var loggedUser by mutableStateOf<Usuario?>(null)
+        private set
+
     fun login(onSuccess: () -> Unit) {
         if (email.isBlank() || password.isBlank()) {
             errorMessage = "Preencha todos os campos"
-        } else {
-            errorMessage = ""
-            onSuccess()
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val user = repository.login(email, password)
+                if (user != null) {
+                    loggedUser = user
+                    errorMessage = ""
+                    clearFields()
+                    onSuccess()
+                } else {
+                    errorMessage = "Email ou senha inválidos"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Erro ao realizar login"
+            }
         }
     }
 
@@ -50,6 +68,7 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
                 )
                 successMessage = "Usuário cadastrado com sucesso!"
                 errorMessage = ""
+                clearFields()
                 onSuccess()
             } catch (e: Exception) {
                 errorMessage = "Erro ao salvar usuário"
@@ -64,5 +83,18 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
             errorMessage = ""
             onSuccess()
         }
+    }
+
+    fun logout() {
+        loggedUser = null
+        clearFields()
+    }
+
+    private fun clearFields() {
+        name = ""
+        email = ""
+        phone = ""
+        password = ""
+        confirmPassword = ""
     }
 }
