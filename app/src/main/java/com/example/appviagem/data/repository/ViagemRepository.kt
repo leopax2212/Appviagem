@@ -25,4 +25,9 @@ class ViagemRepository(private val dao: ViagemDao) {
     suspend fun buscarPorId(id: Int): Viagem? {
         return dao.buscarPorId(id)
     }
+
+    suspend fun buscarViagemAtivaPorCidade(cidade: String): Viagem? {
+        val dataAtual = System.currentTimeMillis()
+        return dao.buscarViagemAtivaPorCidade(cidade, dataAtual)
+    }
 }

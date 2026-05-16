@@ -21,4 +21,14 @@ interface ViagemDao {
 
     @Query("SELECT * FROM viagens WHERE id = :id LIMIT 1")
     suspend fun buscarPorId(id: Int): Viagem?
+
+    // Busca viagem ativa por cidade (case insensitive) dentro do intervalo de datas
+    @Query("""
+        SELECT * FROM viagens 
+        WHERE LOWER(destino) = LOWER(:cidade) 
+        AND :dataAtual >= dataInicio 
+        AND :dataAtual <= dataFim 
+        LIMIT 1
+    """)
+    suspend fun buscarViagemAtivaPorCidade(cidade: String, dataAtual: Long): Viagem?
 }
