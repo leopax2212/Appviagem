@@ -23,8 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.appviagem.ui.components.MapaLocalizacao
 import com.example.appviagem.viewmodel.AuthViewModel
 import com.example.appviagem.viewmodel.LocationViewModel
+import android.net.Uri
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -43,6 +45,7 @@ fun MenuScreen(
     val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // LocationViewModel
     val locationViewModel: LocationViewModel = viewModel(
@@ -172,6 +175,7 @@ fun MenuScreen(
         }
     ) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text("App Viagem") },
@@ -186,6 +190,38 @@ fun MenuScreen(
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Roteiro será implementado em breve")
+                            }
+                        },
+                        icon = { Icon(Icons.Default.List, contentDescription = "Roteiro") },
+                        label = { Text("Roteiro") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = {
+                            val viagem = locationState.viagemAtual
+                            if (viagem != null) {
+                                val destinoEnc = Uri.encode(viagem.destino)
+                                navController.navigate("galeria_fotos/${viagem.id}/$destinoEnc")
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "Nenhuma viagem em andamento para exibir as fotos"
+                                    )
+                                }
+                            }
+                        },
+                        icon = { Icon(Icons.Default.AccountBox, contentDescription = "Fotos") },
+                        label = { Text("Fotos") }
+                    )
+                }
             }
         ) { innerPadding ->
             Column(
@@ -361,6 +397,44 @@ fun MenuScreen(
                                 label = "Total de Gastos",
                                 value = currencyFormatter.format(locationState.totalGastos)
                             )
+                        }
+                    }
+
+                    // Mapa com a localizacao atual da viagem em andamento
+                    val lat = locationState.latitude
+                    val lng = locationState.longitude
+                    if (lat != null && lng != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Localizacao da Viagem",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                MapaLocalizacao(
+                                    latitude = lat,
+                                    longitude = lng,
+                                    titulo = viagem.destino,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(240.dp)
+                                )
+                            }
                         }
                     }
                 }

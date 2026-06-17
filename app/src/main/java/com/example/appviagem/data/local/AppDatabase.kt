@@ -6,16 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.appviagem.data.local.dao.FotoDao
 import com.example.appviagem.data.local.dao.UsuarioDao
 import com.example.appviagem.data.local.dao.ViagemDao
+import com.example.appviagem.data.local.entity.Foto
 import com.example.appviagem.data.local.entity.Usuario
 import com.example.appviagem.data.local.entity.Viagem
 
-@Database(entities = [Usuario::class, Viagem::class], version = 2)
+@Database(entities = [Usuario::class, Viagem::class, Foto::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuarioDao(): UsuarioDao
     abstract fun viagemDao(): ViagemDao
+    abstract fun fotoDao(): FotoDao
 
     companion object {
         @Volatile
@@ -39,6 +42,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Migration de versão 2 para 3 (adiciona tabela fotos)
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS fotos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        viagemId INTEGER NOT NULL,
+                        caminho TEXT NOT NULL,
+                        criadoEm INTEGER NOT NULL,
+                        FOREIGN KEY (viagemId) REFERENCES viagens(id) ON DELETE CASCADE
+                    )
+                """)
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_fotos_viagemId ON fotos(viagemId)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -46,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance
