@@ -61,6 +61,12 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.accompanist.permissions)
 
+    // Mapa (OpenStreetMap - sem necessidade de API key)
+    implementation(libs.osmdroid.android)
+
+    // Carregamento de imagens
+    implementation(libs.coil.compose)
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import com.example.appviagem.data.local.AppDatabase
 import com.example.appviagem.data.repository.UsuarioRepository
 import com.example.appviagem.data.repository.ViagemRepository
@@ -72,6 +74,22 @@ fun NavGraph(context: Context) {
 
         composable("sobre") {
             SobreScreen(navController)
+        }
+
+        composable(
+            route = "galeria_fotos/{viagemId}/{destino}",
+            arguments = listOf(
+                navArgument("viagemId") { type = NavType.IntType },
+                navArgument("destino") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val viagemId = backStackEntry.arguments?.getInt("viagemId") ?: 0
+            val destino = backStackEntry.arguments?.getString("destino").orEmpty()
+            GaleriaFotosScreen(
+                navController = navController,
+                viagemId = viagemId,
+                destino = destino
+            )
         }
     }
 }
